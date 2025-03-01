@@ -1,4 +1,14 @@
 services:
-type: web name: video-overlay-server env: node branch: main buildCommand: npm install startCommand: npm start prebuiltPackages:
-ffmpeg envVars:
-key: CLOUD_NAME value: dh09ifeax
+  - type: web
+    name: video-overlay-server
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: npm start
+    envVars:
+      - key: NODE_VERSION
+        value: 22.13.1
+      - key: CLOUD_NAME
+        value: dh09ifeax
+    runtime: node
+    region: singapore
