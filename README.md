@@ -1,4 +1,6 @@
-โปรเจคนี้อยู่ภายใต้ [MIT License](LICENSE) # Video Overlay Server
+# Video Overlay Server
+
+โปรเจคนี้อยู่ภายใต้ [MIT License](LICENSE)
 
 เซิร์ฟเวอร์นี้เป็นส่วนหนึ่งของโปรเจค **Stream Video Sharing App** ซึ่งเป็นแอปพลิเคชันที่พัฒนาด้วย React Native และ Expo เพื่อให้ผู้คนทั่วไปสามารถแชร์วิดีโอประสบการณ์ของตัวเอง และให้ผู้ชมทั่วโลกสามารถรับชมได้
 
@@ -24,59 +26,3 @@ Stream Video Sharing App เป็นแอปพลิเคชันที่�
 
 ## การติดตั้ง
 1. Clone repository นี้:
-   ```
-   git clone https://github.com/krusenchey/video-overlay-server.git
-   ```
-2. ติดตั้ง dependencies:
-   ```
-   npm install
-   ```
-3. สร้างไฟล์ `.env` และเพิ่มตัวแปร `CLOUD_NAME`:
-   ```
-   CLOUD_NAME=your-cloud-name
-   ```
-   - แทน `your-cloud-name` ด้วย Cloud Name จาก Cloudinary Dashboard
-4. รันเซิร์ฟเวอร์:
-   ```
-   npm start
-   ```
-
-## การใช้งาน
-เซิร์ฟเวอร์นี้มี API สองตัวสำหรับรวมตัวอักษร:
-
-1. **รวมตัวอักษรบนวิดีโอ**:
-   - Endpoint: `POST /merge-text-video`
-   - ตัวอย่างการเรียก:
-     ```
-     curl -X POST https://your-server-url/merge-text-video \
-     -H "Content-Type: application/json" \
-     -d '{"videoUrl": "https://res.cloudinary.com/your-cloud-name/video/upload/...", "overlays": [{"text": "Hello", "fontSize": 24, "color": "white", "position": {"x": 320, "y": 387}}]}'
-     ```
-   - Response:
-     ```
-     { "newVideoUrl": "https://res.cloudinary.com/your-cloud-name/video/upload/..." }
-     ```
-
-2. **รวมตัวอักษรบน Thumbnail**:
-   - Endpoint: `POST /merge-text-image`
-   - ตัวอย่างการเรียก:
-     ```
-     curl -X POST https://your-server-url/merge-text-image \
-     -H "Content-Type: application/json" \
-     -d '{"imageUrl": "https://res.cloudinary.com/your-cloud-name/image/upload/...", "overlays": [{"text": "Hello", "fontSize": 24, "color": "white", "position": {"x": 320, "y": 387}}]}'
-     ```
-   - Response:
-     ```
-     { "newImageUrl": "https://res.cloudinary.com/your-cloud-name/image/upload/..." }
-     ```
-
-## การมีส่วนร่วม
-หากคุณสนใจร่วมพัฒนาโปรเจคนี้:
-1. Fork repository นี้
-2. สร้าง branch ใหม่: `git checkout -b feature/your-feature`
-3. Commit การเปลี่ยนแปลง: `git commit -m "Add your feature"`
-4. Push ไปยัง branch: `git push origin feature/your-feature`
-5. สร้าง Pull Request
-
-## License
-โปรเจคนี้อยู่ภายใต้ [MIT License](LICENSE)
