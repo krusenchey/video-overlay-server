@@ -15,7 +15,15 @@ app.post('/merge-text-video', async (req, res) => {
 
   // ตรวจสอบ input
   if (!videoUrl || !overlays || !Array.isArray(overlays)) {
-    return res.status(400).json({ error: "Invalid input: videoUrl and overlays are required" });
+    return res.status(400).json({ error: 'Invalid input: videoUrl and overlays (array) are required' });
+  }
+
+  // ตรวจสอบว่า overlay ทุกตัวมี properties ครบ
+  for (const overlay of overlays) {
+    const { text, fontSize, color, position } = overlay;
+    if (!text || !fontSize || !color || !position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+      return res.status(400).json({ error: 'Invalid overlay: text, fontSize, color, and position (x, y) are required' });
+    }
   }
 
   const videoPath = path.join(__dirname, 'temp_video.mp4');
@@ -33,21 +41,22 @@ app.post('/merge-text-video', async (req, res) => {
 
     await new Promise((resolve, reject) => {
       writer.on('finish', resolve);
-      writer.on('error', reject);
+      writer.on('error', (err) => reject(new Error(`Failed to download video: ${err.message}`)));
     });
 
     let command = ffmpeg(videoPath);
 
+    // ใช้ฟอนต์จาก environment variable หรือ default สำหรับ Render
+    const fontPath = process.env.FONT_PATH || '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+
     // เพิ่มตัวอักษรจาก overlays
     overlays.forEach((overlay) => {
       const { text, fontSize, color, position } = overlay;
-      if (!text || !fontSize || !color || !position || !position.x || !position.y) return;
       let adjustedColor = color.toLowerCase();
-      if (adjustedColor === 'white') adjustedColor = 'rgb:ffffff';
-      else if (adjustedColor === 'black') adjustedColor = 'rgb:000000';
-      else adjustedColor = adjustedColor.replace('#', '');
-      // ใช้ฟอนต์ที่มีในระบบ (Render ใช้ Ubuntu, ใช้ฟอนต์ DejaVuSans)
-      const fontPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+      // ปรับสีให้เข้ากันได้กับ FFmpeg
+      if (adjustedColor === 'white') adjustedColor = '#FFFFFF';
+      else if (adjustedColor === 'black') adjustedColor = '#000000';
+      else adjustedColor = adjustedColor.startsWith('#') ? color : `#${color}`;
       command = command.videoFilter(
         `drawtext=fontfile='${fontPath}':text='${text}':fontcolor=${adjustedColor}:fontsize=${fontSize}:x=${position.x}:y=${position.y}`
       );
@@ -58,7 +67,7 @@ app.post('/merge-text-video', async (req, res) => {
       command
         .output(outputPath)
         .on('end', resolve)
-        .on('error', reject)
+        .on('error', (err) => reject(new Error(`FFmpeg error: ${err.message}`)))
         .run();
     });
 
@@ -70,7 +79,7 @@ app.post('/merge-text-video', async (req, res) => {
     const uploadResponse = await axios.post(
       `https://api.cloudinary.com/v1_1/${process.env.CLOUD_NAME}/video/upload`,
       formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
+      { headers: formData.getHeaders() } // ใช้ headers จาก FormData
     );
 
     // ลบไฟล์ชั่วคราว
@@ -79,8 +88,8 @@ app.post('/merge-text-video', async (req, res) => {
 
     res.json({ newVideoUrl: uploadResponse.data.secure_url });
   } catch (err) {
-    console.error("(NOBRIDGE) ERROR  Error merging text with video:", err.message);
-    res.status(500).json({ error: "Failed to merge text with video" });
+    console.error('(NOBRIDGE) ERROR Error merging text with video:', err.message);
+    res.status(500).json({ error: `Failed to merge text with video: ${err.message}` });
   }
 });
 
@@ -89,7 +98,14 @@ app.post('/merge-text-image', async (req, res) => {
   const { imageUrl, overlays } = req.body;
 
   if (!imageUrl || !overlays || !Array.isArray(overlays)) {
-    return res.status(400).json({ error: "Invalid input: imageUrl and overlays are required" });
+    return res.status(400).json({ error: 'Invalid input: imageUrl and overlays (array) are required' });
+  }
+
+  for (const overlay of overlays) {
+    const { text, fontSize, color, position } = overlay;
+    if (!text || !fontSize || !color || !position || typeof position.x !== 'number' || typeof position.y !== 'number') {
+      return res.status(400).json({ error: 'Invalid overlay: text, fontSize, color, and position (x, y) are required' });
+    }
   }
 
   const imagePath = path.join(__dirname, 'temp_image.jpg');
@@ -106,19 +122,19 @@ app.post('/merge-text-image', async (req, res) => {
 
     await new Promise((resolve, reject) => {
       writer.on('finish', resolve);
-      writer.on('error', reject);
+      writer.on('error', (err) => reject(new Error(`Failed to download image: ${err.message}`)));
     });
 
     let command = ffmpeg(imagePath);
 
+    const fontPath = process.env.FONT_PATH || '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+
     overlays.forEach((overlay) => {
       const { text, fontSize, color, position } = overlay;
-      if (!text || !fontSize || !color || !position || !position.x || !position.y) return;
       let adjustedColor = color.toLowerCase();
-      if (adjustedColor === 'white') adjustedColor = 'rgb:ffffff';
-      else if (adjustedColor === 'black') adjustedColor = 'rgb:000000';
-      else adjustedColor = adjustedColor.replace('#', '');
-      const fontPath = '/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf';
+      if (adjustedColor === 'white') adjustedColor = '#FFFFFF';
+      else if (adjustedColor === 'black') adjustedColor = '#000000';
+      else adjustedColor = adjustedColor.startsWith('#') ? color : `#${color}`;
       command = command.videoFilter(
         `drawtext=fontfile='${fontPath}':text='${text}':fontcolor=${adjustedColor}:fontsize=${fontSize}:x=${position.x}:y=${position.y}`
       );
@@ -128,7 +144,7 @@ app.post('/merge-text-image', async (req, res) => {
       command
         .output(outputPath)
         .on('end', resolve)
-        .on('error', reject)
+        .on('error', (err) => reject(new Error(`FFmpeg error: ${err.message}`)))
         .run();
     });
 
@@ -139,7 +155,7 @@ app.post('/merge-text-image', async (req, res) => {
     const uploadResponse = await axios.post(
       `https://api.cloudinary.com/v1_1/${process.env.CLOUD_NAME}/image/upload`,
       formData,
-      { headers: { 'Content-Type': 'multipart/form-data' } }
+      { headers: formData.getHeaders() }
     );
 
     fs.unlinkSync(imagePath);
@@ -147,8 +163,8 @@ app.post('/merge-text-image', async (req, res) => {
 
     res.json({ newImageUrl: uploadResponse.data.secure_url });
   } catch (err) {
-    console.error("(NOBRIDGE) ERROR  Error merging text with image:", err.message);
-    res.status(500).json({ error: "Failed to merge text with image" });
+    console.error('(NOBRIDGE) ERROR Error merging text with image:', err.message);
+    res.status(500).json({ error: `Failed to merge text with image: ${err.message}` });
   }
 });
 
