@@ -1,0 +1,4 @@
+services:
+type: web name: video-overlay-server env: node branch: main buildCommand: npm install startCommand: npm start prebuiltPackages:
+ffmpeg envVars:
+key: CLOUD_NAME value: dh09ifeax
