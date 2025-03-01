@@ -4,8 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "start": "node server.js",
-    "postinstall": "apt-get update && apt-get install -y ffmpeg"
+    "start": "node server.js"
+   
   },
   "keywords": [],
   "author": "",
